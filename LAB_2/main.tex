@@ -1,0 +1,481 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+
+\geometry{left=2.5cm, right=2.5cm, top=2cm, bottom=2cm}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+\textbf{МОСКОВСКИЙ АВИАЦИОННЫЙ ИНСТИТУТ} \\
+\textbf{(НАЦИОНАЛЬНЫЙ ИССЛЕДОВАТЕЛЬСКИЙ УНИВЕРСИТЕТ)} \\
+
+\vspace{1cm}
+
+\textbf{Институт №8 «Компьютерные науки и прикладная математика»} \\
+\textbf{Кафедра 806 «Вычислительная математика и программирование»} \\
+
+\vspace{6cm}
+
+\textbf{Лабораторная работа №2} \\
+\textbf{по курсу «Операционные системы»} \\
+
+\vspace{5cm}
+
+\begin{flushright}
+Выполнил: Корнеева Дарья \\
+Группа: М80-208БВ-24 \\
+Преподаватель: Е. С. Миронов \\
+\end{flushright}
+
+\vspace{5cm}
+
+Москва, 2025
+
+\end{center}
+\end{titlepage}
+
+\section*{Условие}
+\textbf{Цель работы:} приобретение практических навыков в управлении потоками в ОС и обеспечение синхронизации между потоками.
+
+\textbf{Задание:} составить программу на языке Си, обрабатывающую данные в многопоточном режиме. При обработке использовать стандартные средства создания потоков операционной системы (Windows/Unix). Ограничение максимального количества потоков, работающих в один момент времени, должно быть задано ключом запуска программы.
+
+\textbf{Вариант: 14} есть набор 512 битных чисел, записанных в шестнадцатеричном представлении, хранящихся в файле. Необходимо посчитать их среднее арифметическое. Округлить результат до целых. Количество используемой оперативной памяти должно задаваться "ключом"
+
+
+\section*{Метод решения}
+Программа реализует многопоточное вычисление среднего арифметического 512-битных чисел с округлением. Алгоритм включает:
+\begin{itemize}
+\item Разделение массива чисел на блоки для параллельной обработки
+\item Создание потоков для вычисления частичных сумм
+\item Синхронизацию потоков с использованием join
+\item Агрегацию частичных сумм в общий результат
+\item Вычисление среднего с математическим округлением
+\end{itemize}
+
+Архитектура программы построена на принципах декомпозиции данных - каждый поток обрабатывает свой сегмент массива независимо.
+
+\section*{Описание программы}
+\textbf{Структура программы:}
+\begin{itemize}
+\item \texttt{main.c} - основной файл с точкой входа
+\item Используемые системные вызовы: \texttt{pthread\_create}, \texttt{pthread\_join} (Unix) или \texttt{CreateThread}, \texttt{WaitForSingleObject} (Windows)
+\end{itemize}
+
+\textbf{Основные типы данных:}
+\begin{itemize}
+\item \texttt{BigInt} - структура для хранения 512-битного числа (8 × 64-битных частей)
+\item \texttt{ThreadData} - структура для передачи данных в поток
+\end{itemize}
+
+\textbf{Ключевые функции:}
+\begin{itemize}
+\item \texttt{read\_512hex()} - чтение чисел из файла в hex-формате
+\item \texttt{add\_bigint\_inplace()} - сложение больших чисел
+\item \texttt{divide\_bigint\_round()} - деление с округлением
+\item \texttt{thread\_func()} - функция потока для частичного суммирования
+\end{itemize}
+
+\section*{Результаты}
+Программа обрабатывает большие наборы 512-битных чисел в многопоточном режиме. Количество потоков ограничивается параметром \texttt{-t}, использование памяти - параметром \texttt{-m}.
+
+\subsection*{Исследование зависимости ускорения от количества потоков}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Количество потоков} & \textbf{Время выполнения (сек)} & \textbf{Ускорение} & \textbf{Эффективность} \\
+\hline
+1 & 0.0051 & 1.00 & 1.00 \\
+\hline
+2 & 0.0054 & 0.95 & 0.48 \\
+\hline
+4 & 0.0048 & 1.06 & 0.27 \\
+\hline
+8 & 0.0144 & 0.35 & 0.04 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection*{Анализ результатов}
+
+\begin{itemize}
+\item \textbf{Малый объем данных}: Время выполнения очень мало (миллисекунды), поэтому накладные расходы на создание потоков превышают выгоду от распараллеливания.
+
+\item \textbf{Оптимальное количество потоков}: 4 потока показывают наилучший результат с ускорением 1.06x.
+
+\item \textbf{Снижение эффективности}:
+  \begin{itemize}
+  \item При 2 потоках эффективность 48\% (почти в 2 раза хуже идеала)
+  \item При 8 потоках эффективность всего 4\% (сильные накладные расходы)
+  \end{itemize}
+
+\subsection*{Вывод}
+Для задачи с малым объемом данных многопоточность неэффективна. Для получения реального ускорения необходим больший объем вычислений.
+
+\begin{figure}[h]
+\centering
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    title={Зависимость ускорения от потоков},
+    xlabel={Количество потоков},
+    ylabel={Ускорение},
+    xmin=1, xmax=8,
+    ymin=0, ymax=1.2,
+    xtick={1,2,4,8},
+    grid=both,
+    width=\textwidth
+]
+\addplot[color=blue, mark=*] coordinates {
+    (1,1.00)
+    (2,0.95)
+    (4,1.06)
+    (8,0.35)
+};
+\addplot[color=red, dashed, domain=1:8] {1};
+\end{axis}
+\end{tikzpicture}
+\caption{График ускорения}
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    title={Зависимость эффективности от потоков},
+    xlabel={Количество потоков},
+    ylabel={Эффективность},
+    xmin=1, xmax=8,
+    ymin=0, ymax=1.2,
+    xtick={1,2,4,8},
+    grid=both,
+    width=\textwidth
+]
+\addplot[color=green, mark=*] coordinates {
+    (1,1.00)
+    (2,0.48)
+    (4,0.27)
+    (8,0.04)
+};
+\addplot[color=red, dashed, domain=1:8] {1};
+\end{axis}
+\end{tikzpicture}
+\caption{График эффективности}
+\end{minipage}
+\end{figure}
+
+\section*{Выводы}
+В ходе работы приобретены навыки работы с потоками в ОС, реализована синхронизация между потоками с использованием join, освоены методы работы с большими числами и ограничением ресурсов через параметры командной строки.
+
+\newpage
+\section*{Исходный код}
+\begin{lstlisting}[language=C,caption=Основная программа]
+#include <getopt.h>
+#include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#define THREAD_TYPE HANDLE
+#define THREAD_CREATE(thread, attr, func, arg) \
+    ((*(thread) = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, arg, 0, NULL)) != NULL ? 0 : -1)
+#define THREAD_JOIN(thread, retval) WaitForSingleObject(thread, INFINITE)
+#else
+#include <pthread.h>
+#define THREAD_TYPE pthread_t
+#define THREAD_CREATE(thread, attr, func, arg) pthread_create(thread, attr, func, arg)
+#define THREAD_JOIN(thread, retval) pthread_join(thread, retval)
+#endif
+
+typedef struct {
+    uint64_t parts[8];
+} BigInt;
+
+typedef struct {
+    BigInt *arr;
+    size_t start, end;
+    BigInt partial_sum;
+} ThreadData;
+
+void add_bigint_inplace(BigInt *a, const BigInt *b) {
+    uint64_t transfer_between_digits = 0;
+    for (int i = 7; i >= 0; i--) {
+        uint64_t sum = a->parts[i] + b->parts[i] + transfer_between_digits;
+        transfer_between_digits = (sum < a->parts[i]) || (transfer_between_digits && sum == a->parts[i]);
+        a->parts[i] = sum;
+    }
+}
+
+int read_512hex(FILE *f, BigInt *out) {
+    char buf[130];
+    if (!fgets(buf, sizeof(buf), f)) return 0;
+    buf[strcspn(buf, "\n")] = 0;
+    
+    char clean[129] = {0};
+    int pos = 0;
+    for (int i = 0; buf[i] && pos < 128; i++) {
+        if ((buf[i] >= '0' && buf[i] <= '9') ||
+            (buf[i] >= 'A' && buf[i] <= 'F') ||
+            (buf[i] >= 'a' && buf[i] <= 'f')) {
+            clean[pos++] = buf[i];
+        }
+    }
+    
+    if (pos < 128) {
+        memmove(clean + (128 - pos), clean, pos);
+        memset(clean, '0', 128 - pos);
+    }
+    
+    for (int i = 0; i < 8; i++) {
+        char part[17] = {0};
+        memcpy(part, clean + i * 16, 16);
+        char *endptr;
+        out->parts[i] = strtoull(part, &endptr, 16);
+        if (endptr == part) {
+            return -1;
+        }
+    }
+    return 1;
+}
+
+int divide_bigint_round(const BigInt *dividend, uint64_t divisor, BigInt *quotient) {
+    if (divisor == 0) {
+        fprintf(stderr, "Деление на ноль невозможно\n");
+        return -1;
+    }
+    
+    uint64_t remainder = 0;
+    BigInt temp_quotient = {0};
+    
+    for (int i = 0; i < 8; i++) {
+        __uint128_t temp = ((__uint128_t)remainder << 64) | dividend->parts[i];
+        __uint128_t div_result = temp / divisor;
+        remainder = temp % divisor;
+        temp_quotient.parts[i] = (uint64_t)div_result;
+    }
+    
+    if (remainder >= (divisor + 1) / 2) {
+        BigInt one = {0};
+        one.parts[7] = 1;
+        add_bigint_inplace(&temp_quotient, &one);
+    }
+    *quotient = temp_quotient;
+    return 0;
+}
+
+void *thread_func(void *arg) {
+    ThreadData *td = (ThreadData *)arg;
+    BigInt zero = {0};
+    td->partial_sum = zero;
+    
+    for (size_t i = td->start; i < td->end; ++i) {
+        add_bigint_inplace(&td->partial_sum, &td->arr[i]);
+    }
+    
+    return NULL;
+}
+
+void print_bigint(const BigInt *num) {
+    for (int i = 0; i < 8; i++) {
+        printf("%016lX", num->parts[i]);
+    }
+    printf("\n");
+}
+
+int main(int argc, char **argv) {
+    BigInt *arr = NULL;
+    THREAD_TYPE *threads = NULL;
+    ThreadData *thread_data = NULL;
+    FILE *f = NULL;
+
+    int max_threads = 1;
+    long memory_mb = 100;
+    char *file = NULL;
+
+    int opt;
+
+    while ((opt = getopt(argc, argv, "t:m:f:")) != -1) {
+        switch (opt) {
+            case 't': 
+                max_threads = atoi(optarg); 
+                if (max_threads <= 0) {
+                    fprintf(stderr, "Количество потоков должно быть > 0\n");
+                    return 1;
+                }
+                break;
+            case 'm': 
+                memory_mb = atol(optarg); 
+                if (memory_mb <= 0) {
+                    fprintf(stderr, "Лимит памяти должен быть > 0\n");
+                    return 1;
+                }
+                break;
+            case 'f': file = optarg; break;
+            default:
+                fprintf(stderr, "Использование: %s -t <количесвто потоков> -m <количество памяти> -f <имя файла>\n", argv[0]);
+                return 1;
+        }
+    }
+    
+    if (!file) {
+        fprintf(stderr, "Не указан файл с данными\n");
+        return 1;
+    }
+
+    f = fopen(file, "r");
+    if (!f) { 
+        perror("Ошибка открытия файла");
+        goto cleanup;
+    }
+
+    size_t max_numbers = ((memory_mb - 10) * 1024 * 1024) / sizeof(BigInt);
+    if (max_numbers < 10) {
+        fprintf(stderr, "Недостаточно памяти, нужно увеличить лимит\n");
+        goto cleanup;
+    }
+
+    arr = malloc(max_numbers * sizeof(BigInt));
+    if (!arr) {
+        perror("Ошибка выделения памяти для чисел");
+        goto cleanup;
+    }
+
+    size_t total = 0;
+    int r;
+    while ((r = read_512hex(f, &arr[total])) > 0) {
+        total++;
+        if (total >= max_numbers) {
+            printf("Достигнут лимит памяти %ld MB\n", memory_mb);
+            break;
+        }
+    }
+    
+    if (r < 0) {
+        fprintf(stderr, "Ошибка формата в файле\n");
+        goto cleanup;
+    }
+    
+    if (total == 0) {
+        fprintf(stderr, "Нет чисел для обработки\n");
+        goto cleanup;
+    }
+
+    printf("Загружено чисел: %zu\n", total);
+
+    int threads_n = (total < (size_t)max_threads) ? (int)total : max_threads;
+    threads = malloc(threads_n * sizeof(THREAD_TYPE));
+    thread_data = malloc(threads_n * sizeof(ThreadData));
+    
+    if (!threads || !thread_data) {
+        perror("Ошибка выделения памяти для потоков");
+        goto cleanup;
+    }
+
+    size_t base = total / threads_n;
+    size_t remains = total % threads_n;
+    size_t current_position = 0;
+    
+    printf("Создается потоков: %d\n", threads_n);
+    for (int i = 0; i < threads_n; ++i) {
+        size_t block = base + (i < (int)remains);
+        thread_data[i].arr = arr;
+        thread_data[i].start = current_position;
+        thread_data[i].end = current_position + block;
+        printf("Поток %d: элементы %zu-%zu (%zu элементов)\n", i, thread_data[i].start, thread_data[i].end - 1, block);
+        current_position += block;
+        
+        if (THREAD_CREATE(&threads[i], NULL, thread_func, &thread_data[i]) != 0) {
+            perror("Ошибка создания потока");
+            goto cleanup;
+        }
+    }
+
+    BigInt total_sum = {0};
+    size_t count = 0;
+    for (int i = 0; i < threads_n; ++i) {
+        THREAD_JOIN(threads[i], NULL);
+        BigInt temp = total_sum;
+        add_bigint_inplace(&temp, &thread_data[i].partial_sum);
+        total_sum = temp;
+        count += thread_data[i].end - thread_data[i].start;
+    }
+  
+    if (count == 0) {
+        fprintf(stderr, "Нет чисел для подсчёта среднего\n");
+        goto cleanup;
+    }
+    if (count > UINT64_MAX) {
+        fprintf(stderr, "Слишком много чисел для деления\n");
+        goto cleanup;
+    }
+   
+    BigInt average = {0};
+    if (divide_bigint_round(&total_sum, (uint64_t)count, &average) != 0) {
+        goto cleanup;  
+    }
+
+    printf("\n \n");
+    printf("Обработано чисел: %zu\n", count);
+    printf("Среднее арифметическое с учётом округления: ");
+    print_bigint(&average);
+
+    int result = 0;
+    goto success;
+
+cleanup:
+    result = 1;  
+
+success:
+    if (f) fclose(f);
+    if (arr) free(arr);
+    if (threads) free(threads);
+    if (thread_data) free(thread_data);
+    
+    return result;
+}
+\end{lstlisting}
+
+\end{document}
